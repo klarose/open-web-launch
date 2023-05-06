@@ -11,4 +11,5 @@ require (
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
 	golang.org/x/mobile v0.0.0-20191115022231-f0c40035f2ba
 	golang.org/x/sys v0.0.0-20191115151921-52ab43148777
+	howett.net/plist v1.0.0
 )
