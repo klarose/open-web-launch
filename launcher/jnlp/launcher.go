@@ -221,12 +221,16 @@ func (launcher *Launcher) getProperties() []Property {
 }
 
 func (launcher *Launcher) getJVMArgs() []string {
+	splitter := func(c rune) bool {
+		return c == ' '
+	}
+
 	var jvmArgs []string
 	relevantResources := launcher.getRelevantResources()
 	for _, resources := range relevantResources {
 		j2se := resources.getJ2SE()
-		if j2se != nil && j2se.JavaVMArgs != "" {
-			args := strings.Split(resources.J2SE.JavaVMArgs, " ")
+		if j2se != nil && strings.Trim(j2se.JavaVMArgs, " ") != "" {
+			args := strings.FieldsFunc(j2se.JavaVMArgs, splitter)
 			jvmArgs = append(jvmArgs, args...)
 		}
 	}
@@ -281,6 +285,7 @@ func (launcher *Launcher) command() (*exec.Cmd, error) {
 	if splash := launcher.getSplashScreen(); splash != "" {
 		javaArgs = append(javaArgs, fmt.Sprintf("-splash:%s", splash))
 	}
+	javaArgs = append(javaArgs, launcher.getProxyArgs()...)
 	if jnlp.AppDescription != nil {
 		javaArgs = append(javaArgs, jnlp.AppDescription.MainClass)
 		for _, appArg := range jnlp.AppDescription.Arguments {
@@ -299,6 +304,55 @@ func (launcher *Launcher) command() (*exec.Cmd, error) {
 	return cmd, nil
 }
 
+func (launcher *Launcher) getProxyArgs() []string {
+	args := []string{}
+	if !settings.UseHttpProxyEnvironmentVariable() {
+		return args
+	}
+
+	args = append(args, launcher.getHttpProxyArgs()...)
+	args = append(args, launcher.getHttpsProxyArgs()...)
+	return args
+}
+
+func (launcher *Launcher) getHttpProxyArgs() []string {
+	args := []string{}
+	httpProxy := os.Getenv("HTTP_PROXY")
+	uri, err := url.Parse(httpProxy)
+	if err != nil {
+		return args
+	}
+
+	if uri.Hostname() != "" {
+		args = append(args, fmt.Sprintf("-Dhttp.proxyHost=%s", uri.Hostname()))
+	}
+
+	if uri.Port() != "" {
+		args = append(args, fmt.Sprintf("-Dhttp.proxyPort=%s", uri.Port()))
+	}
+
+	return args
+}
+
+func (launcher *Launcher) getHttpsProxyArgs() []string {
+	args := []string{}
+	httpsProxy := os.Getenv("HTTPS_PROXY")
+	uri, err := url.Parse(httpsProxy)
+	if err != nil {
+		return args
+	}
+
+	if uri.Hostname() != "" {
+		args = append(args, fmt.Sprintf("-Dhttps.proxyHost=%s", uri.Hostname()))
+	}
+
+	if uri.Port() != "" {
+		args = append(args, fmt.Sprintf("-Dhttps.proxyPort=%s", uri.Port()))
+	}
+
+	return args
+}
+
 func (launcher *Launcher) exec() error {
 	cmd, err := launcher.command()
 	if err != nil {
@@ -307,6 +361,22 @@ func (launcher *Launcher) exec() error {
 	launcher.cmd = cmd
 	if launcher.gui.Closed() {
 		return errCancelled
+	}
+
+	if launcher.options != nil && launcher.options.StdoutHandler != nil {
+		pipe, err := cmd.StdoutPipe()
+		if err != nil {
+			return errors.Wrap(err, "failed to create stdout pipe to application")
+		}
+		go launcher.options.StdoutHandler(pipe)
+	}
+
+	if launcher.options != nil && launcher.options.StderrHandler != nil {
+		pipe, err := cmd.StderrPipe()
+		if err != nil {
+			return errors.Wrap(err, "failed to create stderr pipe to application")
+		}
+		go launcher.options.StderrHandler(pipe)
 	}
 	return cmd.Start()
 }
