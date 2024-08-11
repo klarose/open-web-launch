@@ -1,7 +1,9 @@
 package launcher
 
 import (
+	"io"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -21,7 +23,13 @@ type Launcher interface {
 	UninstallByFilename(filename string, showGUI bool) error
 	UninstallByURL(url string, showGUI bool) error
 	SetLogFile(logFile string)
+	Wait() (*os.ProcessState, error)
 }
+
+// OutputHandler is invoked with the read end of a pipe to which the Launcher forwards
+// output (stdout or stderr). Each instance of an OutputHandler will be provided its own
+// goroutine, so it may block as necessary.
+type OutputHandler = func(pipe io.ReadCloser)
 
 type Options struct {
 	IsRunningFromBrowser          bool
@@ -29,6 +37,11 @@ type Options struct {
 	ShowConsole                   bool
 	DisableVerification           bool
 	DisableVerificationSameOrigin bool
+
+	// If non-nil, processes output from stdout of the launched process
+	StdoutHandler OutputHandler
+	// If non-nil, processes output from stderr of the launched process
+	StderrHandler OutputHandler
 }
 
 func RegisterProtocol(scheme string, launcher Launcher) {
