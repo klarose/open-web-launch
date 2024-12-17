@@ -288,9 +288,7 @@ func (launcher *Launcher) command() (*exec.Cmd, error) {
 	javaArgs = append(javaArgs, launcher.getProxyArgs()...)
 	if jnlp.AppDescription != nil {
 		javaArgs = append(javaArgs, jnlp.AppDescription.MainClass)
-		for _, appArg := range jnlp.AppDescription.Arguments {
-			javaArgs = append(javaArgs, appArg)
-		}
+		javaArgs = append(javaArgs, jnlp.AppDescription.Arguments...) 
 	} else if jnlp.AppletDescription != nil {
 		return nil, errors.New("found <applet-desc> tag but applets are not supported")
 	} else {
