@@ -30,7 +30,7 @@ func (gui *GUI) SendCloseMessage() error {
 }
 
 func (gui *GUI) SetTitle(title string) error {
-	fmt.Printf("Seting Gui title: %s\n", title) 
+	fmt.Printf("Setting Gui title: %s\n", title) 
 	return nil
 }
 
