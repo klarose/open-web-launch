@@ -1,6 +1,9 @@
 package gui
 
-import "fmt"
+import (
+	"os"
+	"fmt"
+)
 
 
 func New() *GUI {
@@ -8,47 +11,42 @@ func New() *GUI {
 }
 
 func (gui *GUI) Start(windowTitle string) error {
-	fmt.Printf("Starting gui, windowTitle: %s", windowTitle) 
+	fmt.Printf("Starting gui, windowTitle: %s\n", windowTitle) 
 	return nil
 }
 
 func (gui *GUI) SendTextMessage(text string) error {
-	fmt.Printf("Sending gui text message: %s", text) 
+	fmt.Printf("%s\n", text) 
 	return nil
 }
 
 func (gui *GUI) SendErrorMessage(err error) error {
-	fmt.Printf("Sending gui error message: %v", err) 
+	fmt.Fprintln(os.Stderr, err)
 	return nil
 }
 
 func (gui *GUI) SendCloseMessage() error {
-	fmt.Printf("Send Gui closed message")
 	return nil
 }
 
 func (gui *GUI) SetTitle(title string) error {
-	fmt.Printf("Seting Gui title: %s", title) 
+	fmt.Printf("Seting Gui title: %s\n", title) 
 	return nil
 }
 
 func (gui *GUI) SetProgressMax(val int) {
-	fmt.Printf("Setting Gui Progress max")
 	return
 }
 
 func (gui *GUI) ProgressStep() {
-	fmt.Printf("Progressing Gui step")
 	return
 }
 
 func (gui *GUI) Closed() bool {
-	fmt.Printf("Closing Gui")
 	return false
 }
 
 func (gui *GUI) Terminate() error {
-	fmt.Printf("Terminating Gui")
 	return nil
 }
 
